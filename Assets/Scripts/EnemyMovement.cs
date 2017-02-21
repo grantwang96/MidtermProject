@@ -13,6 +13,8 @@ public class EnemyMovement : MonoBehaviour {
     int turnRight;
     bool rotating;
 
+    int ghostLayer;
+
     CharacterController enCharCon;
 
     Transform previousTransform;
@@ -41,14 +43,17 @@ public class EnemyMovement : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        
+
+        ghostLayer = 1 << 8;
+        ghostLayer = ~ghostLayer;
+
         enCharCon.Move(Vector3.up * Time.deltaTime * Physics.gravity.y); // Force of gravity
         if(moveController == moveStates.wander)
         {
             Vector3 playerDirection = playerLoc.position - transform.position;
             float angle = Vector3.Angle(playerDirection, transform.forward);
             // Quaternion angle = Quaternion.AngleAxis(60, transform.forward);
-            if(angle < 45f && Vector3.Distance(transform.position, playerLoc.position) < searchDistance)
+            if(angle < 60f && Vector3.Distance(transform.position, playerLoc.position) < searchDistance)
             {
                 Debug.Log("I know you're there!");
                 lookForPlayer();
@@ -72,18 +77,42 @@ public class EnemyMovement : MonoBehaviour {
         {
             RaycastHit hit;
             Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
-            if (Physics.Raycast(rayCastPosition, transform.forward, out hit, Vector3.Distance(transform.position, playerLoc.position)))
+
+            // Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position))
+            
+            if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position), ghostLayer))
             {
-                if (hit.transform.tag == "Wall")
+                if(hit.transform.tag == "Player")
                 {
-                    moveController = moveStates.wander;
                     playerLastKnownLoc = playerLoc.position;
                     GameObject.Find("Player Ghost").transform.position = playerLastKnownLoc;
+                }
+                if (hit.transform.tag == "Wall")
+                {
+                    moveController = moveStates.lastKnownLocation;
                     Debug.Log("Where'd he go?");
                 }
             }
             rotateTowardsPlayer();
             enCharCon.Move(transform.forward * Time.deltaTime * sprintSpeed);
+        }
+    }
+
+    void OnTriggerEnter(Collider coll)
+    {
+        if (coll.transform.name == "Player Ghost" && moveController == moveStates.lastKnownLocation)
+        {
+            Vector3 playerDirection = playerLoc.position - transform.position;
+            float angle = Vector3.Angle(playerDirection, transform.forward);
+            if (angle < 60f && Vector3.Distance(transform.position, playerLoc.position) < searchDistance)
+            {
+                moveController = moveStates.wander;
+                lookForPlayer();
+            }
+            else
+            {
+                moveController = moveStates.wander;
+            }
         }
     }
 
@@ -112,10 +141,6 @@ public class EnemyMovement : MonoBehaviour {
             Debug.Log("Set to wander!");
             startRotateTime = Time.time;
             rotating = true;
-        }
-        if (coll.transform.name == "Player Ghost")
-        {
-            moveController = moveStates.wander;
         }
     }
 

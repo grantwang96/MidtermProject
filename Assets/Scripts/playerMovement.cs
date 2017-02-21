@@ -39,7 +39,7 @@ public class playerMovement : MonoBehaviour {
         vertical = Input.GetAxis("Vertical"); // this is bound to the vertical axis: W and S (up/down movement)
 
         //ROTATING BASED ON MOUSE!
-        transform.Rotate(0f, Input.GetAxis("Mouse X") * Time.deltaTime * 180f, 0f); // Turn with mouse movement
+        transform.Rotate(0f, Input.GetAxis("Mouse X") * Time.deltaTime * 150f, 0f); // Turn with mouse movement
 
         //GETTING PLAYER'S MOVEMENT
         playerCharCon.Move(transform.forward * Time.deltaTime * maxSpeed * vertical); // move along forward facing
