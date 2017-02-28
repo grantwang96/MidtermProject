@@ -32,12 +32,14 @@ public class GameManager : MonoBehaviour {
     {
         SceneManager.LoadScene("Lose");
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Confined;
     }
 
     public void win()
     {
         SceneManager.LoadScene("Win");
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Confined;
     }
 
     public void play()
@@ -48,6 +50,8 @@ public class GameManager : MonoBehaviour {
     
     public void menu()
     {
+        SceneManager.LoadScene("Menu");
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Confined;
     }
 }

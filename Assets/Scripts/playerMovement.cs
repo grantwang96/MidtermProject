@@ -105,11 +105,7 @@ public class playerMovement : MonoBehaviour {
         {
             GameManager.Instance.lose();
         }
-        if(coll.transform.tag == "obstacle")
-        {
-            Vector3 pushDir = playerCharCon.velocity;
-            coll.GetComponent<Rigidbody>().AddForce(pushDir * maxSpeed);
-        }
+        
         if(coll.transform.name == "Key")
         {
             hasKey = true;
@@ -117,11 +113,33 @@ public class playerMovement : MonoBehaviour {
         }
     }
 
+    void OnControllerColliderHit(ControllerColliderHit coll)
+    {
+        if (coll.transform.tag == "obstacle")
+        {
+            Vector3 pushDir = playerCharCon.velocity;
+            coll.gameObject.GetComponent<Rigidbody>().AddForce(pushDir * maxSpeed);
+        }
+        
+        if(coll.transform.name == "GoalDoor" && hasKey)
+        {
+            coll.gameObject.GetComponent<goalDoor>().openDoor();
+        }
+        
+        if(coll.transform.name == "Target")
+        {
+            Debug.Log("Got you!");
+            GameManager.Instance.win();
+        }
+    }
+    /*
     void OnCollisionEnter(Collision coll)
     {
         if (coll.transform.name == "Target")
         {
+            Debug.Log("Got you!");
             GameManager.Instance.win();
         }
     }
+    */
 }
