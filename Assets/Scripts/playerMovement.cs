@@ -13,7 +13,7 @@ public class playerMovement : MonoBehaviour {
     float jumpVelocity;
     float fallVelocity;
     float gravity = -2.5f;
-    bool hasKey = false;
+    public bool hasKey = false;
 
     CharacterController playerCharCon; // For quick access to player's character controller
     Rigidbody rbody; // For quick access to player's rigidbody
@@ -101,11 +101,6 @@ public class playerMovement : MonoBehaviour {
             string currRoom = coll.gameObject.GetComponent<floorConnections>().floorName;
             GameManager.Instance.playerCurrentRoom = currRoom;
         }
-        if (coll.GetComponent<Rigidbody>() != null)
-        {
-            Vector3 pushDir = playerCharCon.velocity;
-            coll.GetComponent<Rigidbody>().AddForce(pushDir * maxSpeed);
-        }
         if(coll.transform.name == "Enemy")
         {
             GameManager.Instance.lose();
@@ -120,9 +115,9 @@ public class playerMovement : MonoBehaviour {
             hasKey = true;
             Destroy(coll.gameObject);
         }
-        if(coll.transform.name == "GoalDoor" && hasKey)
+        if(coll.transform.name == "Target")
         {
-            coll.transform.Rotate(0f, 90f, 0f);
+            GameManager.Instance.win();
         }
     }
 }

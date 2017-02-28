@@ -31,5 +31,22 @@ public class GameManager : MonoBehaviour {
     public void lose()
     {
         SceneManager.LoadScene("Lose");
+        Cursor.visible = true;
+    }
+
+    public void win()
+    {
+        Cursor.visible = true;
+    }
+
+    public void play()
+    {
+        SceneManager.LoadScene("Play");
+        Cursor.visible = false;
+    }
+    
+    public void menu()
+    {
+        Cursor.visible = true;
     }
 }
