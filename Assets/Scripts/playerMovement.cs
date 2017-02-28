@@ -115,7 +115,11 @@ public class playerMovement : MonoBehaviour {
             hasKey = true;
             Destroy(coll.gameObject);
         }
-        if(coll.transform.name == "Target")
+    }
+
+    void OnCollisionEnter(Collision coll)
+    {
+        if (coll.transform.name == "Target")
         {
             GameManager.Instance.win();
         }

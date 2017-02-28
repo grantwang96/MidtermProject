@@ -36,6 +36,7 @@ public class GameManager : MonoBehaviour {
 
     public void win()
     {
+        SceneManager.LoadScene("Win");
         Cursor.visible = true;
     }
 
