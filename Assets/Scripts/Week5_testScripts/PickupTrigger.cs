@@ -22,10 +22,20 @@ public class PickupTrigger : MonoBehaviour {
 
     void OnTriggerStay(Collider other)
     {
-        if(Input.GetMouseButton(0) == true)
+        if(Input.GetMouseButton(0) == true && other.transform.CompareTag("canBeHeld") && thingHolding == null)
         {
             thingHolding = other; // remember it
             thingHolding.transform.SetParent(transform); // parenting it to us, to pick it up.
+            thingHolding.transform.position = new Vector3(transform.position.x, 1f, transform.position.z);
+        }
+    }
+
+    void OnTriggerExit(Collider other)
+    {
+        if(other == thingHolding)
+        {
+            thingHolding.transform.parent = null;
+            thingHolding = null;
         }
     }
 }

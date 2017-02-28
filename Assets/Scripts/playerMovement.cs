@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class playerMovement : MonoBehaviour {
 
-    float moveSpeed = 5f; // Movement speed
-    float maxSpeed = 8f;
+    float moveSpeed = 3f; // Movement speed
+    float maxSpeed = 4.5f;
     float jumpPower = 21f; // Jump power
     float stoppingPower = 10f;
     float horizontal;
@@ -13,6 +13,7 @@ public class playerMovement : MonoBehaviour {
     float jumpVelocity;
     float fallVelocity;
     float gravity = -2.5f;
+    bool hasKey = false;
 
     CharacterController playerCharCon; // For quick access to player's character controller
     Rigidbody rbody; // For quick access to player's rigidbody
@@ -29,6 +30,7 @@ public class playerMovement : MonoBehaviour {
         rbody = GetComponent<Rigidbody>();
         jumpVelocity = 0;
         fallVelocity = 0;
+        hasKey = false;
 	}
 	
 	// Update is called once per frame
@@ -101,9 +103,26 @@ public class playerMovement : MonoBehaviour {
         }
         if (coll.GetComponent<Rigidbody>() != null)
         {
-            Debug.Log("Nudging: " + coll.transform.name);
             Vector3 pushDir = playerCharCon.velocity;
             coll.GetComponent<Rigidbody>().AddForce(pushDir * maxSpeed);
+        }
+        if(coll.transform.name == "Enemy")
+        {
+            GameManager.Instance.lose();
+        }
+        if(coll.transform.tag == "obstacle")
+        {
+            Vector3 pushDir = playerCharCon.velocity;
+            coll.GetComponent<Rigidbody>().AddForce(pushDir * maxSpeed);
+        }
+        if(coll.transform.name == "Key")
+        {
+            hasKey = true;
+            Destroy(coll.gameObject);
+        }
+        if(coll.transform.name == "GoalDoor" && hasKey)
+        {
+            coll.transform.Rotate(0f, 90f, 0f);
         }
     }
 }
