@@ -10,23 +10,33 @@ ModelImporter:
     100004: pCube2
     100006: pCylinder1
     100008: pSphere1
+    100010: pCube4
+    100012: pSphere2
     400000: //RootNode
     400002: pCube1
     400004: pCube2
     400006: pCylinder1
     400008: pSphere1
+    400010: pCube4
+    400012: pSphere2
     2300000: pCube1
     2300002: pCube2
     2300004: pCylinder1
     2300006: pSphere1
+    2300008: pCube4
+    2300010: pSphere2
     3300000: pCube1
     3300002: pCube2
     3300004: pCylinder1
     3300006: pSphere1
+    3300008: pCube4
+    3300010: pSphere2
     4300000: pCube1
     4300002: pCube2
     4300004: pCylinder1
     4300006: pSphere1
+    4300008: pSphere2
+    4300010: pCube4
     9500000: //RootNode
   materials:
     importMaterials: 1

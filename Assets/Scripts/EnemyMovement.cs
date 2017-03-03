@@ -5,33 +5,34 @@ using UnityEngine;
 public class EnemyMovement : MonoBehaviour {
 
     float searchSpeed = 3f;
-    float sprintSpeed = 4f;
-    float pushForce = 8f;
+    float sprintSpeed = 5.25f;
+    float pushForce = 16f;
+    float obstacleRemovalTime;
     float searchDistance = 30f;
     public GameObject LocNode;
 
     Vector3[] wanderLocs = {
-        new Vector3(25, 1.5f, -25),
-        new Vector3(25, 1.5f, 15),
-        new Vector3(15, 1.5f, 15),
+        new Vector3(25, 1.5f, -25), //0
+        new Vector3(25, 1.5f, 15), // 1
+        new Vector3(15, 1.5f, 15), // 2
         new Vector3(15, 1.5f, -15),
         new Vector3(10, 1.5f, -15),
-        new Vector3(-10, 1.5f, 15),
+        new Vector3(-10, 1.5f, 15), // 5
         new Vector3(-15, 1.5f, 15),
         new Vector3(-15, 1.5f, -15),
         new Vector3(-15, 1.5f, -25),
         new Vector3(-30, 1.5f, -25),
-        new Vector3(-30, 1.5f, -40),
-        new Vector3(-20, 1.5f, -50),
-        new Vector3(-30, 1.5f, -60),
-        new Vector3(-40, 1.5f, -50),
+        new Vector3(-30, 1.5f, -53), // 10
         new Vector3(-30, 1.5f, -25),
         new Vector3(0, 1.5f, -25),
-        new Vector3(25, 1.5f, -25),
-        new Vector3(50, 1.5f, -20),
-        new Vector3(30, 1.5f, -30),
-        new Vector3(50, 1.5f, -40),
-        new Vector3(30, 1.5f, -30),
+        new Vector3(25, 1.5f, -25), // 20
+        new Vector3(38, 1.5f, -25f),
+        new Vector3(57, 1.5f, -25f),
+        new Vector3(42, 1.5f, -25f),
+        new Vector3(38, 1.5f, -25),
+        new Vector3(38, 1.5f, -35), // 25
+        new Vector3(56, 1.5f, -35),
+        new Vector3(38, 1.5f, -35), // 27
     };
 
     int current;
@@ -46,6 +47,7 @@ public class EnemyMovement : MonoBehaviour {
     CharacterController enCharCon;
 
     moveStates moveController;
+    moveStates prevMoveState;
     GameObject player;
     Transform playerLoc;
     Vector3 playerLastKnownLoc;
@@ -57,6 +59,7 @@ public class EnemyMovement : MonoBehaviour {
         wander = 0x02,
         lastKnownLocation = 0x04,
         radialScan = 0x08,
+        removingObstacles = 0x16,
     }
 
 	// Use this for initialization
@@ -83,25 +86,38 @@ public class EnemyMovement : MonoBehaviour {
 
         ghostLayer = 1 << 8;
         obstacleLayer = 1 << 9;
+        int obstacleInfLayer = obstacleLayer;
         nodeLayer = 1 << 10;
         
         ghostLayer = ~ghostLayer;
         obstacleLayer = ~obstacleLayer;
         nodeLayer = ~nodeLayer;
 
-        enCharCon.Move(Vector3.up * Time.deltaTime * Physics.gravity.y); // Force of gravity
+        enCharCon.Move(Vector3.up * Time.deltaTime * Physics.gravity.y * 2); // Force of gravity
 
         if(moveController == moveStates.wander) // If wandering around
         {
-            Vector3 playerDirection = playerLoc.position - transform.position; // Get player's direction from enemy
-            float angle = Vector3.Angle(playerDirection, transform.forward); // Check angle from enemy's front
-            // Quaternion angle = Quaternion.AngleAxis(60, transform.forward);
-            if(angle < 70f && Vector3.Distance(transform.position, playerLoc.position) < searchDistance) // If player's within field of vision
+            scanForPlayer();
+
+            RaycastHit hit;
+            Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
+            Vector3 nodeTargetPos = new Vector3(wanderLocs[current].x, wanderLocs[current].y, wanderLocs[current].z);
+            if (Physics.Raycast(rayCastPosition, nodeTargetPos - transform.position, out hit, searchDistance, obstacleLayer))
             {
-                lookForPlayer();
+                if (hit.transform.tag == "Door")
+                {
+                    Debug.Log("I see a: " + hit.transform.tag);
+                    if (!hit.collider.GetComponent<regularDoor>().opened)
+                    {
+                        if (current >= wanderLocs.Length - 1) { current = 0; }
+                        else { current++; }
+                        Debug.Log("Moving on to next node.");
+                    }
+                }
             }
             rotateTowardsNode();
             enCharCon.Move(transform.forward * Time.deltaTime * searchSpeed);
+
         }
         else if(moveController == moveStates.lastKnownLocation)
         {
@@ -126,6 +142,7 @@ public class EnemyMovement : MonoBehaviour {
                     {
                         Debug.Log("Switching to Sighted Chase!");
                         moveController = moveStates.sightedChase;
+                        radialScanTurns = 0;
                     }
                 }
             }
@@ -139,7 +156,67 @@ public class EnemyMovement : MonoBehaviour {
             if(radialScanTurns >= 2)
             {
                 returnToWander();
+                radialScanTurns = 0;
             }
+        }
+        else if(moveController == moveStates.removingObstacles)
+        {
+            Debug.Log("Switching to Remove Obstacles!");
+            bool touching = false;
+            Collider[] inRangeColliders = Physics.OverlapSphere(transform.position, 1.5f);
+            foreach(Collider possibleObstacle in inRangeColliders)
+            {
+                if(possibleObstacle == this.GetComponent<Collider>())
+                {
+                    continue;
+                }
+                Vector3 pObPos = possibleObstacle.transform.position;
+                Vector3 possObDir = pObPos - transform.position;
+                float distance = Vector3.Distance(pObPos, transform.position);
+                if(Physics.Raycast(transform.position, pObPos - transform.position, distance, obstacleInfLayer))
+                {
+                    if(possibleObstacle.attachedRigidbody != null)
+                    {
+                        touching = true;
+                        possibleObstacle.attachedRigidbody
+                            .AddForce(new Vector3(possObDir.x, 2f, possObDir.z) * pushForce);
+                    }
+                }
+            }
+
+            RaycastHit hit;
+            Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
+            
+            if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position), ghostLayer))
+            {
+                if (hit.transform.tag == "Wall" || hit.transform.tag == "Door")
+                {
+                    Debug.Log("Switching to LastKnownLocation");
+                    playerLastKnownLoc = playerLoc.position;
+                    GameObject.Find("Player Ghost").transform.position = playerLastKnownLoc;
+                    GameObject.Find("Player Ghost").transform.rotation = playerLoc.rotation;
+                    prevMoveState = moveStates.lastKnownLocation;
+                }
+            }
+
+            if (!touching)
+            {
+                if(prevMoveState == moveStates.sightedChase)
+                {
+                    moveController = moveStates.wander;
+                    lookForPlayer();
+                }
+                else if(prevMoveState == moveStates.lastKnownLocation)
+                {
+                    moveController = moveStates.lastKnownLocation;
+                }
+                else
+                {
+                    moveController = moveStates.wander;
+                }
+                lookForPlayer();
+            }
+            
         }
         else
         {
@@ -150,7 +227,7 @@ public class EnemyMovement : MonoBehaviour {
             
             if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position), ghostLayer))
             {
-                if (hit.transform.tag == "Wall")
+                if (hit.transform.tag == "Wall" || hit.transform.tag == "Door")
                 {
                     Debug.Log("Switching to LastKnownLocation");
                     playerLastKnownLoc = playerLoc.position;
@@ -166,17 +243,23 @@ public class EnemyMovement : MonoBehaviour {
 
     void OnTriggerEnter(Collider coll)
     {
+        
+    }
+
+    void OnTriggerStay(Collider coll)
+    {
         if (coll.transform.name == "Player Ghost" && moveController == moveStates.lastKnownLocation)
         {
             GameObject.Find("Player Ghost").transform.position = new Vector3(0, -100, 0);
             moveController = moveStates.radialScan;
             forwardAtTurn = transform.TransformDirection(Vector3.forward);
+            lookForPlayer();
         }
-        if(coll.transform.CompareTag("Node") && moveController == moveStates.wander)
+        if (coll.transform.CompareTag("Node") && moveController == moveStates.wander)
         {
-            if(coll.transform.position == wanderLocs[current])
+            if (coll.transform.position == wanderLocs[current])
             {
-                if (current >= wanderLocs.Length-1) { current = 0; }
+                if (current >= wanderLocs.Length - 1) { current = 0; }
                 else { current++; }
             }
         }
@@ -191,8 +274,35 @@ public class EnemyMovement : MonoBehaviour {
         }
         if (coll.collider.attachedRigidbody != null)
         {
-            Vector3 pushDir = enCharCon.velocity;
-            coll.collider.attachedRigidbody.AddForce(pushDir * pushForce);
+            prevMoveState = moveController;
+            moveController = moveStates.removingObstacles;
+        }
+        if (coll.transform.CompareTag("Door"))
+        {
+            if (coll.gameObject.GetComponent<regularDoor>().opened == false)
+            {
+                returnToWander();
+            }
+        }
+    }
+
+    void nextNode(RaycastHit hit)
+    {
+        if (hit.transform.position == wanderLocs[current])
+        {
+            if (current >= wanderLocs.Length - 1) { current = 0; }
+            else { current++; }
+        }
+    }
+
+    void scanForPlayer()
+    {
+        Vector3 playerDirection = playerLoc.position - transform.position; // Get player's direction from enemy
+        float angle = Vector3.Angle(playerDirection, transform.forward); // Check angle from enemy's front
+                                                                         // Quaternion angle = Quaternion.AngleAxis(60, transform.forward);
+        if (angle < 70f && Vector3.Distance(transform.position, playerLoc.position) < searchDistance) // If player's within field of vision
+        {
+            lookForPlayer();
         }
     }
 
@@ -201,7 +311,7 @@ public class EnemyMovement : MonoBehaviour {
         RaycastHit hit;
         Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
         Vector3 playerTargetPos = new Vector3(playerLoc.position.x, playerLoc.position.y + 0.7f, playerLoc.position.z);
-        if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, searchDistance))
+        if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, searchDistance, obstacleLayer))
         {
             if (hit.transform.tag == "Player")
             {
@@ -212,12 +322,17 @@ public class EnemyMovement : MonoBehaviour {
         }
     }
 
+    void checkForWalls()
+    {
+        
+    }
+
     void rotateTowardsPlayer()
     {
         Vector3 playerPos = new Vector3(playerLoc.position.x, 0, playerLoc.position.z);
         Vector3 enPos = new Vector3(transform.position.x, 0, transform.position.z);
         Quaternion look = Quaternion.LookRotation(playerPos - enPos);
-        transform.rotation = Quaternion.Slerp(transform.rotation, look, 4f * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, look, 3.5f * Time.deltaTime);
     }
 
     void rotateTowardsNode()
@@ -225,7 +340,7 @@ public class EnemyMovement : MonoBehaviour {
         Vector3 targetNode = wanderLocs[current];
         Vector3 enPos = new Vector3(transform.position.x, 1.5f, transform.position.z);
         Quaternion look = Quaternion.LookRotation(targetNode - enPos);
-        transform.rotation = Quaternion.Slerp(transform.rotation, look, 4f * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, look, 3.5f * Time.deltaTime);
     }
 
     void rotateTowardsLastKnownLocation()

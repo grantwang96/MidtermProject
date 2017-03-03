@@ -5,7 +5,7 @@ using UnityEngine;
 public class playerMovement : MonoBehaviour {
 
     float moveSpeed = 3f; // Movement speed
-    float maxSpeed = 4.5f;
+    float maxSpeed = 5f;
     float jumpPower = 21f; // Jump power
     float stoppingPower = 10f;
     float horizontal;
@@ -13,6 +13,7 @@ public class playerMovement : MonoBehaviour {
     float jumpVelocity;
     float fallVelocity;
     float gravity = -2.5f;
+    float pushForce = 3f;
     public bool hasKey = false;
 
     CharacterController playerCharCon; // For quick access to player's character controller
@@ -93,19 +94,10 @@ public class playerMovement : MonoBehaviour {
         fallVelocity += gravity;
         return fallVelocity;
     }
+    
 
     void OnTriggerStay(Collider coll)
     {
-        if (coll.transform.tag == "Floor")
-        {
-            string currRoom = coll.gameObject.GetComponent<floorConnections>().floorName;
-            GameManager.Instance.playerCurrentRoom = currRoom;
-        }
-        if(coll.transform.name == "Enemy")
-        {
-            GameManager.Instance.lose();
-        }
-        
         if(coll.transform.name == "Key")
         {
             hasKey = true;
@@ -115,21 +107,30 @@ public class playerMovement : MonoBehaviour {
 
     void OnControllerColliderHit(ControllerColliderHit coll)
     {
-        if (coll.transform.tag == "obstacle")
+        if (coll.collider.attachedRigidbody != null)
         {
             Vector3 pushDir = playerCharCon.velocity;
-            coll.gameObject.GetComponent<Rigidbody>().AddForce(pushDir * maxSpeed);
+            coll.collider.attachedRigidbody.AddForce(pushDir * pushForce);
         }
-        
-        if(coll.transform.name == "GoalDoor" && hasKey)
+        if (coll.transform.name == "GoalDoor" && hasKey)
         {
-            coll.gameObject.GetComponent<goalDoor>().openDoor();
+
         }
-        
+        if(coll.transform.tag == "Door")
+        {
+            // Debug.Log("Touching Door!");
+            // regularDoor doorCon = coll.gameObject.GetComponent<regularDoor>();
+            // if (!doorCon.getOpCl()) { doorCon.open(); }
+            // else { doorCon.close(); }
+        }
         if(coll.transform.name == "Target")
         {
             Debug.Log("Got you!");
             GameManager.Instance.win();
+        }
+        if (coll.transform.name == "Enemy")
+        {
+            GameManager.Instance.lose();
         }
     }
     /*

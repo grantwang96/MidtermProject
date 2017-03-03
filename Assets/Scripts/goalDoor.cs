@@ -1,11 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class goalDoor : MonoBehaviour {
     bool opened;
     Quaternion look;
     Quaternion forward;
+    public GameObject message;
 	// Use this for initialization
 	void Start () {
         opened = false;
@@ -23,16 +25,27 @@ public class goalDoor : MonoBehaviour {
 
     void OnTriggerEnter(Collider coll)
     {
-        /*
         if(coll.transform.name == "Player")
         {
-            Debug.Log("Opening door!");
             if (coll.gameObject.GetComponent<playerMovement>().hasKey)
             {
                 opened = true;
+                Debug.Log("Opening door!");
+            }
+            else
+            {
+                message.SetActive(true);
+                message.GetComponent<Text>().text = "The door's locked! I bet there's a key somewhere.";
             }
         }
-        */
+    }
+
+    void OnTriggerExit(Collider coll)
+    {
+        if(coll.transform.name == "Player")
+        {
+            message.SetActive(false);
+        }
     }
 
     public void openDoor()
