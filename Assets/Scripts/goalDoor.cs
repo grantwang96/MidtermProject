@@ -52,4 +52,9 @@ public class goalDoor : MonoBehaviour {
     {
         opened = true;
     }
+
+    void displayMessage()
+    {
+
+    }
 }

@@ -98,7 +98,12 @@ public class playerMovement : MonoBehaviour {
 
     void OnTriggerStay(Collider coll)
     {
-        if(coll.transform.name == "Key")
+        if (coll.transform.name == "Enemy")
+        {
+            Debug.Log("Touching me!");
+            GameManager.Instance.lose();
+        }
+        if (coll.transform.name == "Key")
         {
             hasKey = true;
             Destroy(coll.gameObject);
@@ -112,10 +117,6 @@ public class playerMovement : MonoBehaviour {
             Vector3 pushDir = playerCharCon.velocity;
             coll.collider.attachedRigidbody.AddForce(pushDir * pushForce);
         }
-        if (coll.transform.name == "GoalDoor" && hasKey)
-        {
-
-        }
         if(coll.transform.tag == "Door")
         {
             // Debug.Log("Touching Door!");
@@ -128,10 +129,15 @@ public class playerMovement : MonoBehaviour {
             Debug.Log("Got you!");
             GameManager.Instance.win();
         }
-        if (coll.transform.name == "Enemy")
+        /*
+        if (coll.transform.name == "GoalDoor" && hasKey)
         {
-            GameManager.Instance.lose();
+            coll.gameObject.GetComponent<goalDoor>().openDoor();
+        }else if(coll.transform.name == "GoalDoor" && !hasKey)
+        {
+            coll.gameObject
         }
+        */
     }
     /*
     void OnCollisionEnter(Collision coll)

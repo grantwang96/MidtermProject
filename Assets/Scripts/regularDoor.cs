@@ -34,7 +34,7 @@ public class regularDoor : MonoBehaviour {
         if (moving)
         {
             moveTime += Time.deltaTime;
-            if(moveTime > 1) { moving = false; }
+            if(moveTime > 0.5f) { moving = false; }
         }
     }
 
@@ -54,19 +54,19 @@ public class regularDoor : MonoBehaviour {
                 opened = false;
             }
             moving = true;
-            moveTime = Time.time;
+            moveTime = 0;
+        }
+        if(coll.transform.name == "Enemy Hands")
+        {
+            if (!opened)
+            {
+                opened = true;
+                moving = true;
+                moveTime = 0;
+            }
         }
     }
-
-    public void open()
-    {
-
-    }
-
-    public void close()
-    {
-
-    }
+    
 
     public bool getOpCl()
     {

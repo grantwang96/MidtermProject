@@ -25,14 +25,14 @@ public class EnemyMovement : MonoBehaviour {
         new Vector3(-30, 1.5f, -53), // 10
         new Vector3(-30, 1.5f, -25),
         new Vector3(0, 1.5f, -25),
-        new Vector3(25, 1.5f, -25), // 20
+        new Vector3(25, 1.5f, -25),
         new Vector3(38, 1.5f, -25f),
-        new Vector3(57, 1.5f, -25f),
+        new Vector3(57, 1.5f, -25f), // 15
         new Vector3(42, 1.5f, -25f),
         new Vector3(38, 1.5f, -25),
-        new Vector3(38, 1.5f, -35), // 25
+        new Vector3(38, 1.5f, -35),
         new Vector3(56, 1.5f, -35),
-        new Vector3(38, 1.5f, -35), // 27
+        new Vector3(38, 1.5f, -35), // 20
     };
 
     int current;
@@ -71,8 +71,8 @@ public class EnemyMovement : MonoBehaviour {
         Debug.Log("Switching to wander");
         moveController = moveStates.wander;
 
-        transform.position = wanderLocs[0];
-        current = 1;
+        transform.position = wanderLocs[8];
+        current = 9;
         targetLoc = wanderLocs[current];
         for(int i = 0; i<wanderLocs.Length; i++)
         {
@@ -106,12 +106,12 @@ public class EnemyMovement : MonoBehaviour {
             {
                 if (hit.transform.tag == "Door")
                 {
-                    Debug.Log("I see a: " + hit.transform.tag);
-                    if (!hit.collider.GetComponent<regularDoor>().opened)
+                    if(hit.transform.gameObject.GetComponent<regularDoor>() == null)
                     {
                         if (current >= wanderLocs.Length - 1) { current = 0; }
                         else { current++; }
                         Debug.Log("Moving on to next node.");
+                        Debug.Log("I see a: " + hit.transform.tag);
                     }
                 }
             }
@@ -184,6 +184,7 @@ public class EnemyMovement : MonoBehaviour {
                 }
             }
 
+            /*
             RaycastHit hit;
             Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
             
@@ -198,6 +199,7 @@ public class EnemyMovement : MonoBehaviour {
                     prevMoveState = moveStates.lastKnownLocation;
                 }
             }
+            */
 
             if (!touching)
             {
@@ -277,12 +279,16 @@ public class EnemyMovement : MonoBehaviour {
             prevMoveState = moveController;
             moveController = moveStates.removingObstacles;
         }
+        /*
         if (coll.transform.CompareTag("Door"))
         {
-            if (coll.gameObject.GetComponent<regularDoor>().opened == false)
-            {
-                returnToWander();
-            }
+            coll.gameObject.GetComponent<regularDoor>().opened = true;
+        }
+        */
+        if(coll.transform.name == "Player")
+        {
+            Debug.Log("Touching me!");
+            GameManager.Instance.lose();
         }
     }
 
