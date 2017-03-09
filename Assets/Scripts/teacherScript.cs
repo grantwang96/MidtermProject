@@ -41,7 +41,7 @@ public class teacherScript : MonoBehaviour {
     Vector3 endNode = new Vector3(-37, 1.5f, -30);
 
     moveStates moveController;
-    float speed = 4f;
+    float speed = 2f;
     float textTime;
 
 	// Use this for initialization
@@ -86,6 +86,7 @@ public class teacherScript : MonoBehaviour {
         {
             GameObject.Find("KeyDoor").AddComponent<regularDoor>();
             GameObject.Find("KeyDoor").GetComponent<regularDoor>().opened = false;
+            Destroy(GameObject.Find("KeyDoor").GetComponent<lockedDoor>());
             moveController = moveStates.movingTowardsEndNode;
         }
         else if(moveController == moveStates.movingTowardsEndNode)
@@ -104,11 +105,11 @@ public class teacherScript : MonoBehaviour {
         }
         if(coll.transform.name == "Player")
         {
-            if(moveController == moveStates.sittingInBathroom) { NPCMessage.GetComponent<Text>().text = messages[0]; }
+            if(moveController == moveStates.sittingInBathroom) { NPCMessage.transform.FindChild("Message").GetComponent<Text>().text = messages[0]; }
             else if(moveController == moveStates.movingTowardsClassroom)
             {
-                if(textTime < 3f) { NPCMessage.GetComponent<Text>().text = messages[0]; }
-                else { NPCMessage.GetComponent<Text>().text = messages[1]; }
+                if(textTime < 3f) { NPCMessage.transform.FindChild("Message").GetComponent<Text>().text = messages[0]; }
+                else { NPCMessage.transform.FindChild("Message").GetComponent<Text>().text = messages[1]; }
             }else if(moveController == moveStates.movingTowardsEndNode || moveController == moveStates.sittingOutsideClassroom) { NPCMessage.GetComponent<Text>().text = messages[2]; }
             NPCMessage.SetActive(true);
         }
@@ -119,16 +120,27 @@ public class teacherScript : MonoBehaviour {
                 if(coll.transform.position == travelNodes[currentTravelNode])
                 {
                     currentTravelNode++;
-                    Debug.Log("Moving to: " + travelNodes[currentTravelNode]);
                 }
             }
             else
             {
-                Debug.Log("Opening classroom!");
                 moveController = moveStates.openingClassroom;
             }
         }
         if(coll.transform.tag == "teacherNode" && moveController == moveStates.movingTowardsEndNode) { moveController = moveStates.sittingOutsideClassroom; }
+    }
+
+    void OnTriggerStay(Collider coll)
+    {
+        if (coll.transform.name == "Player"
+            && (moveController == moveStates.sittingInBathroom ||
+            moveController == moveStates.sittingOutsideClassroom))
+        {
+            Debug.Log("Turning");
+            Vector3 dir = coll.transform.position - transform.position;
+            Quaternion look = Quaternion.LookRotation(dir);
+            transform.rotation = Quaternion.Lerp(transform.rotation, look, 3.5f * Time.deltaTime);
+        }
     }
 
     void OnTriggerExit(Collider coll)

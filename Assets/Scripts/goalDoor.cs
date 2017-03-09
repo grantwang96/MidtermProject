@@ -35,7 +35,7 @@ public class goalDoor : MonoBehaviour {
             else
             {
                 message.SetActive(true);
-                message.GetComponent<Text>().text = "The door's locked! I bet there's a key somewhere.";
+                message.transform.FindChild("Message").GetComponent<Text>().text = "The door's locked! I bet there's a key somewhere.";
             }
         }
     }

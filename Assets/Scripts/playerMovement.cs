@@ -5,7 +5,8 @@ using UnityEngine;
 public class playerMovement : MonoBehaviour {
 
     float moveSpeed = 3f; // Movement speed
-    float maxSpeed = 5f;
+    float maxSpeed = 4f;
+    float sprintMult = 1.25f;
     float jumpPower = 21f; // Jump power
     float stoppingPower = 10f;
     float horizontal;
@@ -36,6 +37,8 @@ public class playerMovement : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+        int handLayer = 1 << 12;
+        handLayer = ~handLayer;
 
         //GRAB INPUT FROM DEVICES
         horizontal = Input.GetAxis("Horizontal"); // this is bound to the horizontal axis: A and D (left/right movement)
@@ -44,12 +47,16 @@ public class playerMovement : MonoBehaviour {
         //ROTATING BASED ON MOUSE!
         transform.Rotate(0f, Input.GetAxis("Mouse X") * Time.deltaTime * 150f, 0f); // Turn with mouse movement
 
+        if (Input.GetKey(KeyCode.LeftShift)) { sprintMult = 1.25f; }
+        else { sprintMult = 1f; }
+
         //GETTING PLAYER'S MOVEMENT
-        playerCharCon.Move(transform.forward * Time.deltaTime * maxSpeed * vertical); // move along forward facing
-        playerCharCon.Move(transform.right * Time.deltaTime * maxSpeed * horizontal); // move along right/left
+        playerCharCon.Move(transform.forward * Time.deltaTime * maxSpeed * vertical * sprintMult); // move along forward facing
+        playerCharCon.Move(transform.right * Time.deltaTime * maxSpeed * horizontal * sprintMult); // move along right/left
 
         //CHECKING FOR JUMP
         canJump = Physics.Raycast(transform.position, Vector3.down, 1.51f);
+        canJump = Physics.Raycast(transform.position, Vector3.down, 1.51f, handLayer);
         if(canJump && Input.GetButtonDown("Jump"))
         {
             jumping = true;
@@ -92,6 +99,7 @@ public class playerMovement : MonoBehaviour {
     float playerGravity()
     {
         fallVelocity += gravity;
+        if(fallVelocity > 10) { fallVelocity = 10; }
         return fallVelocity;
     }
     

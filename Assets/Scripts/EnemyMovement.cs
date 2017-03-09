@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour {
 
-    float searchSpeed = 3f;
-    float sprintSpeed = 5.25f;
+    float searchSpeed = 4f;
+    float sprintSpeed = 4.5f;
     float pushForce = 16f;
     float obstacleRemovalTime;
     float searchDistance = 30f;
@@ -13,26 +13,31 @@ public class EnemyMovement : MonoBehaviour {
 
     Vector3[] wanderLocs = {
         new Vector3(25, 1.5f, -25), //0
-        new Vector3(25, 1.5f, 15), // 1
-        new Vector3(15, 1.5f, 15), // 2
+        new Vector3(25, 1.5f, -10),
+        new Vector3(25, 1.5f, 0),
+        new Vector3(25, 1.5f, 15),
+        new Vector3(15, 1.5f, 15),
+        new Vector3(15, 1.5f, 0), // 5
         new Vector3(15, 1.5f, -15),
         new Vector3(10, 1.5f, -15),
-        new Vector3(-10, 1.5f, 15), // 5
-        new Vector3(-15, 1.5f, 15),
+        new Vector3(0, 1.5f, 0),
+        new Vector3(-10, 1.5f, 15),
+        new Vector3(-15, 1.5f, 15), // 10
+        new Vector3(-15, 1.5f, 0),
         new Vector3(-15, 1.5f, -15),
         new Vector3(-15, 1.5f, -25),
         new Vector3(-30, 1.5f, -25),
-        new Vector3(-30, 1.5f, -53), // 10
+        new Vector3(-30, 1.5f, -53), // 15
         new Vector3(-30, 1.5f, -25),
         new Vector3(0, 1.5f, -25),
         new Vector3(25, 1.5f, -25),
         new Vector3(38, 1.5f, -25f),
-        new Vector3(57, 1.5f, -25f), // 15
+        new Vector3(57, 1.5f, -25f), // 20
         new Vector3(42, 1.5f, -25f),
         new Vector3(38, 1.5f, -25),
         new Vector3(38, 1.5f, -35),
         new Vector3(56, 1.5f, -35),
-        new Vector3(38, 1.5f, -35), // 20
+        new Vector3(38, 1.5f, -35), // 25
     };
 
     int current;
@@ -53,13 +58,16 @@ public class EnemyMovement : MonoBehaviour {
     Vector3 playerLastKnownLoc;
     Vector3 targetLoc;
 
+    bool couldSeePlayer;
+    float recoveryTime;
+
     public enum moveStates
     {
         sightedChase = 0x01,
         wander = 0x02,
         lastKnownLocation = 0x04,
         radialScan = 0x08,
-        removingObstacles = 0x16,
+        recovering = 0x16,
     }
 
 	// Use this for initialization
@@ -71,14 +79,17 @@ public class EnemyMovement : MonoBehaviour {
         Debug.Log("Switching to wander");
         moveController = moveStates.wander;
 
-        transform.position = wanderLocs[8];
-        current = 9;
+        // System.Array.Reverse(wanderLocs);
+
+        transform.position = wanderLocs[24];
+        current = 25;
         targetLoc = wanderLocs[current];
         for(int i = 0; i<wanderLocs.Length; i++)
         {
             GameObject newNode = Instantiate(LocNode);
             newNode.transform.position = wanderLocs[i];
         }
+        couldSeePlayer = false;
     }
 	
 	// Update is called once per frame
@@ -93,12 +104,16 @@ public class EnemyMovement : MonoBehaviour {
         obstacleLayer = ~obstacleLayer;
         nodeLayer = ~nodeLayer;
 
-        enCharCon.Move(Vector3.up * Time.deltaTime * Physics.gravity.y * 2); // Force of gravity
+        enCharCon.Move(Vector3.up * Time.deltaTime * Physics.gravity.y); // Force of gravity
 
         if(moveController == moveStates.wander) // If wandering around
         {
+            couldSeePlayer = false;
             scanForPlayer();
-
+            if(GameObject.Find("Player Ghost").transform.position != new Vector3(0, -100, 0))
+            {
+                GameObject.Find("Player Ghost").transform.position = new Vector3(0, -100, 0);
+            }
             RaycastHit hit;
             Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
             Vector3 nodeTargetPos = new Vector3(wanderLocs[current].x, wanderLocs[current].y, wanderLocs[current].z);
@@ -121,12 +136,14 @@ public class EnemyMovement : MonoBehaviour {
         }
         else if(moveController == moveStates.lastKnownLocation)
         {
+            couldSeePlayer = false;
             lookForPlayer();
             rotateTowardsLastKnownLocation();
             enCharCon.Move(transform.forward * Time.deltaTime * sprintSpeed);
         }
         else if(moveController == moveStates.radialScan)
         {
+            couldSeePlayer = false;
             Debug.Log("Performing Radial Scan");
             Vector3 playerDirection = playerLoc.position - transform.position; // Get player's direction from enemy
             float angle = Vector3.Angle(playerDirection, transform.forward); // Check angle from enemy's front
@@ -159,72 +176,89 @@ public class EnemyMovement : MonoBehaviour {
                 radialScanTurns = 0;
             }
         }
-        else if(moveController == moveStates.removingObstacles)
+        else if(moveController == moveStates.recovering)
         {
-            Debug.Log("Switching to Remove Obstacles!");
-            bool touching = false;
-            Collider[] inRangeColliders = Physics.OverlapSphere(transform.position, 1.5f);
-            foreach(Collider possibleObstacle in inRangeColliders)
-            {
-                if(possibleObstacle == this.GetComponent<Collider>())
-                {
-                    continue;
-                }
-                Vector3 pObPos = possibleObstacle.transform.position;
-                Vector3 possObDir = pObPos - transform.position;
-                float distance = Vector3.Distance(pObPos, transform.position);
-                if(Physics.Raycast(transform.position, pObPos - transform.position, distance, obstacleInfLayer))
-                {
-                    if(possibleObstacle.attachedRigidbody != null)
-                    {
-                        touching = true;
-                        possibleObstacle.attachedRigidbody
-                            .AddForce(new Vector3(possObDir.x, 2f, possObDir.z) * pushForce);
-                    }
-                }
-            }
+            recoveryTime += Time.deltaTime;
+            knockBackObjects(obstacleInfLayer);
 
-            /*
             RaycastHit hit;
             Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
-            
             if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position), ghostLayer))
             {
-                if (hit.transform.tag == "Wall" || hit.transform.tag == "Door")
+                if (hit.transform.name == "Player")
                 {
-                    Debug.Log("Switching to LastKnownLocation");
+                    couldSeePlayer = true;
+                    prevMoveState = moveStates.sightedChase;
+                }
+                else if (hit.transform.tag != "Player" && prevMoveState == moveStates.sightedChase)
+                {
+                    prevMoveState = moveStates.lastKnownLocation;
                     playerLastKnownLoc = playerLoc.position;
                     GameObject.Find("Player Ghost").transform.position = playerLastKnownLoc;
-                    GameObject.Find("Player Ghost").transform.rotation = playerLoc.rotation;
-                    prevMoveState = moveStates.lastKnownLocation;
+                    couldSeePlayer = false;
                 }
             }
-            */
 
-            if (!touching)
+            if (recoveryTime >= 0.2f)
             {
-                if(prevMoveState == moveStates.sightedChase)
+                if (prevMoveState == moveStates.wander)
                 {
-                    moveController = moveStates.wander;
-                    lookForPlayer();
+                    returnToWander();
                 }
-                else if(prevMoveState == moveStates.lastKnownLocation)
+                else if (prevMoveState == moveStates.lastKnownLocation)
                 {
                     moveController = moveStates.lastKnownLocation;
                 }
                 else
                 {
-                    moveController = moveStates.wander;
+                    moveController = moveStates.radialScan;
+                    lookForPlayer();
                 }
-                lookForPlayer();
+            }
+        }
+        /*
+        else if(moveController == moveStates.removingObstacles)
+        {
+            Debug.Log("Switching to Remove Obstacles!");
+            bool touching = knockBackObjects(obstacleInfLayer);
+            if (couldSeePlayer)
+            {
+                RaycastHit hit;
+                Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
+                if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position), ghostLayer))
+                {
+                    if(hit.transform.name == "Player")
+                    {
+                        couldSeePlayer = true;
+                        prevMoveState = moveStates.sightedChase;
+                    }
+                    else if(hit.transform.tag != "Player")
+                    {
+                        prevMoveState = moveStates.lastKnownLocation;
+                        playerLastKnownLoc = playerLoc.position;
+                        GameObject.Find("Player Ghost").transform.position = playerLastKnownLoc;
+                        couldSeePlayer = false;
+                    }
+                }
             }
             
-        }
+            
+            if (!touching)
+            {
+                if(prevMoveState == moveStates.sightedChase)
+                {
+                    moveController = moveStates.sightedChase;
+                }
+                else if(prevMoveState == moveStates.lastKnownLocation) { moveController = moveStates.lastKnownLocation; }
+                else { moveController = moveStates.wander; }
+                lookForPlayer();
+            }
+        }*/
         else
         {
             RaycastHit hit;
             Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
-
+            couldSeePlayer = true;
             // Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position))
             
             if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position), ghostLayer))
@@ -233,6 +267,7 @@ public class EnemyMovement : MonoBehaviour {
                 {
                     Debug.Log("Switching to LastKnownLocation");
                     playerLastKnownLoc = playerLoc.position;
+                    couldSeePlayer = false;
                     GameObject.Find("Player Ghost").transform.position = playerLastKnownLoc;
                     GameObject.Find("Player Ghost").transform.rotation = playerLoc.rotation;
                     moveController = moveStates.lastKnownLocation;
@@ -277,7 +312,9 @@ public class EnemyMovement : MonoBehaviour {
         if (coll.collider.attachedRigidbody != null)
         {
             prevMoveState = moveController;
-            moveController = moveStates.removingObstacles;
+            moveController = moveStates.recovering;
+            recoveryTime = 0f;
+
         }
         /*
         if (coll.transform.CompareTag("Door"))
@@ -322,15 +359,37 @@ public class EnemyMovement : MonoBehaviour {
             if (hit.transform.tag == "Player")
             {
                 Debug.Log("Switching to Sighted Chase");
+                couldSeePlayer = true;
                 GameObject.Find("Player Ghost").transform.position = new Vector3(0, -100, 0);
                 moveController = moveStates.sightedChase;
             }
         }
     }
 
-    void checkForWalls()
+    bool knockBackObjects(int obstacleInfLayer) // knockout objects
     {
-        
+        bool touching = false;
+        Collider[] inRangeColliders = Physics.OverlapSphere(transform.position, 1.5f);
+        foreach (Collider possibleObstacle in inRangeColliders)
+        {
+            if (possibleObstacle == this.GetComponent<Collider>())
+            {
+                continue;
+            }
+            Vector3 pObPos = possibleObstacle.transform.position;
+            Vector3 possObDir = pObPos - transform.position;
+            float distance = Vector3.Distance(pObPos, transform.position);
+            if (Physics.Raycast(transform.position, pObPos - transform.position, distance, obstacleInfLayer))
+            {
+                if (possibleObstacle.attachedRigidbody != null)
+                {
+                    touching = true;
+                    possibleObstacle.attachedRigidbody
+                        .AddForce(new Vector3(possObDir.x, 2f, possObDir.z) * pushForce);
+                }
+            }
+        }
+        return touching;
     }
 
     void rotateTowardsPlayer()
@@ -362,9 +421,11 @@ public class EnemyMovement : MonoBehaviour {
         possibleReturnLocs.Clear();
         for(int i = 0; i < wanderLocs.Length; i++)
         {
+            int ignoreObs = 1 << 9;
+            ignoreObs = ~ignoreObs;
             RaycastHit hit2;
             float distance = Vector3.Distance(transform.position, wanderLocs[i]);
-            if(Physics.Raycast(transform.position, wanderLocs[i] - transform.position, out hit2))
+            if (Physics.Raycast(transform.position, wanderLocs[i] - transform.position, out hit2, distance, obstacleLayer))
             {
                 if(hit2.transform.tag == "Node")
                 {
@@ -394,7 +455,6 @@ public class EnemyMovement : MonoBehaviour {
             if(Dist1 < Dist2)
             {
                 smallestInt = i;
-                Debug.Log("Closest Node: " + wanderLocs[possibleReturnLocs[smallestInt]]);
             }
         }
         Debug.Log("Closest Node: " + wanderLocs[possibleReturnLocs[smallestInt]]);
