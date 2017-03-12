@@ -6,9 +6,10 @@ using UnityEngine.UI;
 public class lockedDoor : MonoBehaviour {
 
     public GameObject message;
+    public AudioClip openDoor;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
 		
 	}
 	
@@ -21,7 +22,10 @@ public class lockedDoor : MonoBehaviour {
     {
         if (coll.transform.name == "Hands")
         {
-            Debug.Log("Hello!");
+            if (!GetComponent<AudioSource>().isPlaying)
+            {
+                GetComponent<AudioSource>().Play();
+            }
             message.SetActive(true);
             message.transform.FindChild("Message").GetComponent<Text>().text = "Mr. Polinski must've locked it. Someone \n must know where he is.";
         }

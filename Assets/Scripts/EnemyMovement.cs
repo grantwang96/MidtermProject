@@ -8,7 +8,7 @@ public class EnemyMovement : MonoBehaviour {
     float sprintSpeed = 4.5f;
     float pushForce = 16f;
     float obstacleRemovalTime;
-    float searchDistance = 30f;
+    float searchDistance = 40f;
     public GameObject LocNode;
 
     Vector3[] wanderLocs = {
@@ -27,17 +27,19 @@ public class EnemyMovement : MonoBehaviour {
         new Vector3(-15, 1.5f, -15),
         new Vector3(-15, 1.5f, -25),
         new Vector3(-30, 1.5f, -25),
-        new Vector3(-30, 1.5f, -53), // 15
+        new Vector3(-29.5f, 1.5f, -37.5f), // 15
+        new Vector3(-30, 1.5f, -53),
         new Vector3(-30, 1.5f, -25),
         new Vector3(0, 1.5f, -25),
         new Vector3(25, 1.5f, -25),
-        new Vector3(38, 1.5f, -25f),
-        new Vector3(57, 1.5f, -25f), // 20
+        new Vector3(38, 1.5f, -24.5f), // 20
+        new Vector3(57, 1.5f, -25f),
         new Vector3(42, 1.5f, -25f),
         new Vector3(38, 1.5f, -25),
-        new Vector3(38, 1.5f, -35),
-        new Vector3(56, 1.5f, -35),
-        new Vector3(38, 1.5f, -35), // 25
+        new Vector3(33, 1.5f, -30),
+        new Vector3(38, 1.5f, -34.5f),// 25
+        new Vector3(56, 1.5f, -35),// 26
+        new Vector3(38, 1.5f, -35), 
     };
 
     int current;
@@ -81,8 +83,8 @@ public class EnemyMovement : MonoBehaviour {
 
         // System.Array.Reverse(wanderLocs);
 
-        transform.position = wanderLocs[24];
-        current = 25;
+        transform.position = wanderLocs[26];
+        current = 27;
         targetLoc = wanderLocs[current];
         for(int i = 0; i<wanderLocs.Length; i++)
         {
@@ -179,7 +181,7 @@ public class EnemyMovement : MonoBehaviour {
         else if(moveController == moveStates.recovering)
         {
             recoveryTime += Time.deltaTime;
-            knockBackObjects(obstacleInfLayer);
+            bool touching = knockBackObjects(obstacleInfLayer);
 
             RaycastHit hit;
             Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
@@ -203,7 +205,7 @@ public class EnemyMovement : MonoBehaviour {
             {
                 if (prevMoveState == moveStates.wander)
                 {
-                    returnToWander();
+                    moveController = moveStates.wander;
                 }
                 else if (prevMoveState == moveStates.lastKnownLocation)
                 {
@@ -278,11 +280,6 @@ public class EnemyMovement : MonoBehaviour {
         }
     }
 
-    void OnTriggerEnter(Collider coll)
-    {
-        
-    }
-
     void OnTriggerStay(Collider coll)
     {
         if (coll.transform.name == "Player Ghost" && moveController == moveStates.lastKnownLocation)
@@ -315,6 +312,10 @@ public class EnemyMovement : MonoBehaviour {
             moveController = moveStates.recovering;
             recoveryTime = 0f;
 
+        }
+        if(coll.transform.tag == "stallDoor" && (moveController == moveStates.sightedChase || moveController == moveStates.lastKnownLocation))
+        {
+            moveController = moveStates.radialScan;
         }
         /*
         if (coll.transform.CompareTag("Door"))

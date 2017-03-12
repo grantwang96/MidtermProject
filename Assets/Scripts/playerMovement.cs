@@ -103,6 +103,15 @@ public class playerMovement : MonoBehaviour {
         return fallVelocity;
     }
     
+    void OnTriggerEnter(Collider coll)
+    {
+        if (coll.transform.name == "Key")
+        {
+            hasKey = true;
+            transform.Find("pickUpKey").GetComponent<AudioSource>().Play();
+            Destroy(coll.gameObject);
+        }
+    }
 
     void OnTriggerStay(Collider coll)
     {
@@ -110,11 +119,6 @@ public class playerMovement : MonoBehaviour {
         {
             Debug.Log("Touching me!");
             GameManager.Instance.lose();
-        }
-        if (coll.transform.name == "Key")
-        {
-            hasKey = true;
-            Destroy(coll.gameObject);
         }
     }
 
@@ -124,13 +128,6 @@ public class playerMovement : MonoBehaviour {
         {
             Vector3 pushDir = playerCharCon.velocity;
             coll.collider.attachedRigidbody.AddForce(pushDir * pushForce);
-        }
-        if(coll.transform.tag == "Door")
-        {
-            // Debug.Log("Touching Door!");
-            // regularDoor doorCon = coll.gameObject.GetComponent<regularDoor>();
-            // if (!doorCon.getOpCl()) { doorCon.open(); }
-            // else { doorCon.close(); }
         }
         if(coll.transform.name == "Target")
         {

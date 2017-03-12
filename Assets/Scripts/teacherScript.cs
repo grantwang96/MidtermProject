@@ -20,6 +20,8 @@ public class teacherScript : MonoBehaviour {
     public GameObject NPCMessage;
     bool startingMovement;
 
+    public AudioClip openDoor;
+
     Vector3[] travelNodes =
     {
         new Vector3(42, 1.5f, -35),
@@ -110,7 +112,7 @@ public class teacherScript : MonoBehaviour {
             {
                 if(textTime < 3f) { NPCMessage.transform.FindChild("Message").GetComponent<Text>().text = messages[0]; }
                 else { NPCMessage.transform.FindChild("Message").GetComponent<Text>().text = messages[1]; }
-            }else if(moveController == moveStates.movingTowardsEndNode || moveController == moveStates.sittingOutsideClassroom) { NPCMessage.GetComponent<Text>().text = messages[2]; }
+            }else if(moveController == moveStates.movingTowardsEndNode || moveController == moveStates.sittingOutsideClassroom) { NPCMessage.transform.FindChild("Message").GetComponent<Text>().text = messages[2]; }
             NPCMessage.SetActive(true);
         }
         if(coll.transform.tag == "teacherNode" && moveController == moveStates.movingTowardsClassroom)
@@ -125,6 +127,7 @@ public class teacherScript : MonoBehaviour {
             else
             {
                 moveController = moveStates.openingClassroom;
+                GameObject.Find("KeyDoor").GetComponent<AudioSource>().clip = openDoor;
             }
         }
         if(coll.transform.tag == "teacherNode" && moveController == moveStates.movingTowardsEndNode) { moveController = moveStates.sittingOutsideClassroom; }

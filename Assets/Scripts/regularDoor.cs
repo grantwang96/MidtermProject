@@ -47,11 +47,13 @@ public class regularDoor : MonoBehaviour {
             {
                 Debug.Log("Opening Door!");
                 opened = true;
+                GetComponent<AudioSource>().Play();
             }
             else if(opened && !moving)
             {
                 Debug.Log("Closing Door!");
                 opened = false;
+                GetComponent<AudioSource>().Play();
             }
             moving = true;
             moveTime = 0;
@@ -63,6 +65,7 @@ public class regularDoor : MonoBehaviour {
                 opened = true;
                 moving = true;
                 moveTime = 0;
+                GetComponent<AudioSource>().Play();
             }
         }
     }

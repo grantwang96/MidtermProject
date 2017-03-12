@@ -9,23 +9,34 @@ public class MenuManager : MonoBehaviour {
     {
         SceneManager.LoadScene("Play");
         Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     public void lose()
     {
         SceneManager.LoadScene("Lose");
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void win()
     {
         SceneManager.LoadScene("Win");
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void mainMenu()
     {
         SceneManager.LoadScene("Menu");
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+    }
+
+    public void instructions()
+    {
+        SceneManager.LoadScene("Instructions");
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 }

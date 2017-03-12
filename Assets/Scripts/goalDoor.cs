@@ -8,6 +8,9 @@ public class goalDoor : MonoBehaviour {
     Quaternion look;
     Quaternion forward;
     public GameObject message;
+
+    public AudioClip unlockedDoor;
+
 	// Use this for initialization
 	void Start () {
         opened = false;
@@ -31,9 +34,12 @@ public class goalDoor : MonoBehaviour {
             {
                 opened = true;
                 Debug.Log("Opening door!");
+                GetComponent<AudioSource>().clip = unlockedDoor;
+                GetComponent<AudioSource>().Play();
             }
             else
             {
+                GetComponent<AudioSource>().Play();
                 message.SetActive(true);
                 message.transform.FindChild("Message").GetComponent<Text>().text = "The door's locked! I bet there's a key somewhere.";
             }
