@@ -29,6 +29,10 @@ public class GameManager : MonoBehaviour {
         {
             instructions();
         }
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            menu();
+        }
 	}
 
     public void lose()
@@ -59,7 +63,7 @@ public class GameManager : MonoBehaviour {
     }
     public void instructions()
     {
-        SceneManager.LoadScene("Instruction");
+        SceneManager.LoadScene("Instructions");
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }

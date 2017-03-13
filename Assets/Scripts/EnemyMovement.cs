@@ -8,7 +8,7 @@ public class EnemyMovement : MonoBehaviour {
     float sprintSpeed = 4.5f;
     float pushForce = 16f;
     float obstacleRemovalTime;
-    float searchDistance = 40f;
+    float searchDistance = 30f;
     public GameObject LocNode;
 
     Vector3[] wanderLocs = {
@@ -59,8 +59,7 @@ public class EnemyMovement : MonoBehaviour {
     Transform playerLoc;
     Vector3 playerLastKnownLoc;
     Vector3 targetLoc;
-
-    bool couldSeePlayer;
+    
     float recoveryTime;
 
     public enum moveStates
@@ -91,7 +90,6 @@ public class EnemyMovement : MonoBehaviour {
             GameObject newNode = Instantiate(LocNode);
             newNode.transform.position = wanderLocs[i];
         }
-        couldSeePlayer = false;
     }
 	
 	// Update is called once per frame
@@ -110,7 +108,6 @@ public class EnemyMovement : MonoBehaviour {
 
         if(moveController == moveStates.wander) // If wandering around
         {
-            couldSeePlayer = false;
             scanForPlayer();
             if(GameObject.Find("Player Ghost").transform.position != new Vector3(0, -100, 0))
             {
@@ -138,14 +135,12 @@ public class EnemyMovement : MonoBehaviour {
         }
         else if(moveController == moveStates.lastKnownLocation)
         {
-            couldSeePlayer = false;
             lookForPlayer();
             rotateTowardsLastKnownLocation();
             enCharCon.Move(transform.forward * Time.deltaTime * sprintSpeed);
         }
         else if(moveController == moveStates.radialScan)
         {
-            couldSeePlayer = false;
             Debug.Log("Performing Radial Scan");
             Vector3 playerDirection = playerLoc.position - transform.position; // Get player's direction from enemy
             float angle = Vector3.Angle(playerDirection, transform.forward); // Check angle from enemy's front
@@ -189,7 +184,6 @@ public class EnemyMovement : MonoBehaviour {
             {
                 if (hit.transform.name == "Player")
                 {
-                    couldSeePlayer = true;
                     prevMoveState = moveStates.sightedChase;
                 }
                 else if (hit.transform.tag != "Player" && prevMoveState == moveStates.sightedChase)
@@ -197,7 +191,6 @@ public class EnemyMovement : MonoBehaviour {
                     prevMoveState = moveStates.lastKnownLocation;
                     playerLastKnownLoc = playerLoc.position;
                     GameObject.Find("Player Ghost").transform.position = playerLastKnownLoc;
-                    couldSeePlayer = false;
                 }
             }
 
@@ -260,7 +253,6 @@ public class EnemyMovement : MonoBehaviour {
         {
             RaycastHit hit;
             Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
-            couldSeePlayer = true;
             // Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position))
             
             if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, Vector3.Distance(transform.position, playerLoc.position), ghostLayer))
@@ -269,7 +261,6 @@ public class EnemyMovement : MonoBehaviour {
                 {
                     Debug.Log("Switching to LastKnownLocation");
                     playerLastKnownLoc = playerLoc.position;
-                    couldSeePlayer = false;
                     GameObject.Find("Player Ghost").transform.position = playerLastKnownLoc;
                     GameObject.Find("Player Ghost").transform.rotation = playerLoc.rotation;
                     moveController = moveStates.lastKnownLocation;
@@ -343,8 +334,8 @@ public class EnemyMovement : MonoBehaviour {
     {
         Vector3 playerDirection = playerLoc.position - transform.position; // Get player's direction from enemy
         float angle = Vector3.Angle(playerDirection, transform.forward); // Check angle from enemy's front
-                                                                         // Quaternion angle = Quaternion.AngleAxis(60, transform.forward);
-        if (angle < 70f && Vector3.Distance(transform.position, playerLoc.position) < searchDistance) // If player's within field of vision
+        Debug.Log("Angle: " + angle); // Quaternion angle = Quaternion.AngleAxis(60, transform.forward);
+        if (angle < 70f && (Vector3.Distance(transform.position, playerLoc.position) < searchDistance)) // If player's within field of vision
         {
             lookForPlayer();
         }
@@ -355,12 +346,22 @@ public class EnemyMovement : MonoBehaviour {
         RaycastHit hit;
         Vector3 rayCastPosition = new Vector3(transform.position.x, transform.position.y + 0.7f, transform.position.z);
         Vector3 playerTargetPos = new Vector3(playerLoc.position.x, playerLoc.position.y + 0.7f, playerLoc.position.z);
-        if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, searchDistance, obstacleLayer))
+        
+        ghostLayer = 1 << 8;
+        obstacleLayer = 1 << 9;
+        int obstacleInfLayer = obstacleLayer;
+        nodeLayer = 1 << 10;
+
+        ghostLayer = ~ghostLayer;
+        obstacleLayer = ~obstacleLayer;
+        nodeLayer = ~nodeLayer;
+        
+
+        if (Physics.Raycast(rayCastPosition, playerLoc.position - transform.position, out hit, searchDistance, obstacleLayer, QueryTriggerInteraction.Ignore))
         {
             if (hit.transform.tag == "Player")
             {
                 Debug.Log("Switching to Sighted Chase");
-                couldSeePlayer = true;
                 GameObject.Find("Player Ghost").transform.position = new Vector3(0, -100, 0);
                 moveController = moveStates.sightedChase;
             }
